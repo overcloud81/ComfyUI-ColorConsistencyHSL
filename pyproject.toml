@@ -1,0 +1,21 @@
+[project]
+name = "color-consistency-hsl"
+version = "5.2.0"
+description = "HSL-based color consistency node for ComfyUI. Supports independent matching of Luminance, Hue, and Saturation with mask protection and bilingual UI."
+readme = "README.md"
+requires-python = ">=3.8"
+license = { text = "MIT" }
+authors = [
+    { name = "overcloud81", email = "your-email@example.com" }
+]
+dependencies = [
+    "scipy>=1.9.0"
+]
+
+[project.urls]
+Repository = "https://github.com/yourusername/ComfyUI-ColorConsistencyHSL"
+"Bug Tracker" = "https://github.com/yourusername/ComfyUI-ColorConsistencyHSL/issues"
+
+[tool.comfy]
+PublisherId = "overcloud81"
+DisplayName = "色彩亮度一致性混合 (HSL高级版)"
