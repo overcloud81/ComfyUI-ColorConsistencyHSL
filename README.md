@@ -108,4 +108,4 @@ MIT License. See [LICENSE](LICENSE) for details.
 ## Author / 作者
 
 **overcloud81** (@github @modelscope) with deepseek  
-Copyright © 2025 overcloud81. All rights reserved.
+Copyright © 2026 overcloud81. All rights reserved.
