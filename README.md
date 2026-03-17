@@ -8,6 +8,10 @@ A ComfyUI custom node for color/luminance consistency correction. Works with any
 适用于任何图像编辑、增强或放大工作流的色彩/亮度一致性校正节点。特别针对 Flux.2-Klein 等模型导致的色彩偏移问题进行了优化。  
 **双语界面** – 根据 ComfyUI 语言设置，菜单选项自动显示中文或英文。
 
+This node is designed for image editing model workflows, ideal for scenarios where images undergo high-definition upscaling or local content editing while preserving original colors. It enables color matching for heavily stylized images, effectively correcting unintended color shifts inevitably introduced by image editing models—a capability nearly impossible to achieve through other means.
+
+本节点专为图像编辑模型工作流设计，适用于高清重绘放大或局部内容编辑后需保留原始色彩的图像。它能够对强烈风格化的图像进行色彩匹配，有效纠正图像编辑模型在生成过程中不可避免的意外色彩偏移——这是其他方法几乎无法实现的。
+
 ---
 
 ## Features / 功能亮点
