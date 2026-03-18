@@ -13,8 +13,8 @@ dependencies = [
 ]
 
 [project.urls]
-Repository = "https://github.com/yourusername/ComfyUI-ColorConsistencyHSL"
-"Bug Tracker" = "https://github.com/yourusername/ComfyUI-ColorConsistencyHSL/issues"
+Repository = "https://github.com/overcloud81/ComfyUI-ColorConsistencyHSL"
+"Bug Tracker" = "https://github.com/overcloud81/ComfyUI-ColorConsistencyHSL/issues"
 
 [tool.comfy]
 PublisherId = "overcloud81"
