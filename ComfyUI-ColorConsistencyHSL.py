@@ -9,6 +9,8 @@
 import torch
 import numpy as np
 from scipy.ndimage import gaussian_filter
+import folder_paths
+import os
 
 class ColorConsistencyHSLAdvanced:
     """
@@ -19,46 +21,42 @@ class ColorConsistencyHSLAdvanced:
     """
     @classmethod
     def INPUT_TYPES(cls):
-        # 定义多语言选项字典 / Define bilingual option dictionaries
-        mode_options = {
-            "亮度": "luminance",
-            "色相": "hue",
-            "饱和度": "saturation",
-            "亮度+色相": "luminance+hue",
-            "亮度+饱和度": "luminance+saturation",
-            "色相+饱和度": "hue+saturation",
-            "亮度+色相+饱和度": "luminance+hue+saturation"
-        }
-        anchor_mode_options = {
-            "统计匹配": "statistical match",
-            "像素级精确": "pixel-perfect",
-            "亮度统计+色彩精确": "luminance stat + color exact",
-            "色彩精确": "color exact"
-        }
-        luma_space_options = {
-            "LAB L通道": "LAB L channel",
-            "线性RGB亮度": "linear RGB luminance"
-        }
-        interpolation_options = {
-            "bilinear": "bilinear",
-            "nearest": "nearest"
-        }
-
+        # 检测 ComfyUI 语言设置 / Detect ComfyUI language setting
+        is_chinese = cls._is_chinese_locale()
+        
+        # 根据语言设置选择菜单文字 / Select menu text based on language
+        if is_chinese:
+            mode_list = ["亮度", "色相", "饱和度", "亮度+色相", "亮度+饱和度", "色相+饱和度", "亮度+色相+饱和度"]
+            anchor_mode_list = ["统计匹配", "像素级精确", "亮度统计+色彩精确", "色彩精确"]
+            luma_space_list = ["LAB L通道", "线性RGB亮度"]
+            interpolation_list = ["bilinear", "nearest"]
+            mode_default = "亮度+色相+饱和度"
+            anchor_default = "统计匹配"
+            luma_default = "LAB L通道"
+        else:
+            mode_list = ["luminance", "hue", "saturation", "luminance+hue", "luminance+saturation", "hue+saturation", "luminance+hue+saturation"]
+            anchor_mode_list = ["statistical match", "pixel-perfect", "luminance stat + color exact", "color exact"]
+            luma_space_list = ["LAB L channel", "linear RGB luminance"]
+            interpolation_list = ["bilinear", "nearest"]
+            mode_default = "luminance+hue+saturation"
+            anchor_default = "statistical match"
+            luma_default = "LAB L channel"
+        
         return {
             "required": {
                 "reference": ("IMAGE",),
                 "target": ("IMAGE",),
-                "mode": (mode_options, {"default": "亮度+色相+饱和度"}),
-                "anchor_mode": (anchor_mode_options, {
-                    "default": "统计匹配",
+                "mode": (mode_list, {"default": mode_default}),
+                "anchor_mode": (anchor_mode_list, {
+                    "default": anchor_default,
                     "tooltip": "色彩精确：色相和饱和度像素级精确，亮度不变 / Color exact: pixel-perfect hue/saturation, luminance unchanged"
                 }),
-                "luma_space": (luma_space_options, {
-                    "default": "LAB L通道",
+                "luma_space": (luma_space_list, {
+                    "default": luma_default,
                     "tooltip": "亮度统计匹配的空间（仅当亮度参与匹配时有效） / Space for luminance statistical matching (only when luminance is matched)"
                 }),
                 "align_corners": ("BOOLEAN", {"default": True, "tooltip": "对齐四角，True可减少像素偏移 / Align corners, True reduces pixel shift"}),
-                "interpolation": (interpolation_options, {"default": "bilinear", "tooltip": "缩放插值方式 / Interpolation method for scaling"}),
+                "interpolation": (interpolation_list, {"default": "bilinear", "tooltip": "缩放插值方式 / Interpolation method for scaling"}),
                 "force_match_size": ("BOOLEAN", {"default": False, "tooltip": "强制尺寸一致（不一致时自动缩放） / Force size match (auto-scale if different)"}),
                 "luma_strength": ("FLOAT", {
                     "default": 1.0,
@@ -111,6 +109,30 @@ class ColorConsistencyHSLAdvanced:
     FUNCTION = "blend"
     CATEGORY = "image/postprocessing"
 
+    @staticmethod
+    def _is_chinese_locale():
+        """检测是否为中文界面 / Detect if UI is in Chinese"""
+        try:
+            # 方法1: 检查 ComfyUI 配置文件 / Check ComfyUI config file
+            config_path = os.path.join(folder_paths.base_path, "comfy.settings.json")
+            if os.path.exists(config_path):
+                import json
+                with open(config_path, 'r', encoding='utf-8') as f:
+                    config = json.load(f)
+                    lang = config.get("Comfy.Locale", {}).get("value", "en")
+                    if isinstance(lang, str):
+                        return lang.startswith('zh') or lang == 'zh-CN' or lang == 'zh-TW'
+            
+            # 方法2: 检查环境变量 / Check environment variable
+            lang_env = os.environ.get('COMFYUI_LANG', '')
+            if lang_env.startswith('zh'):
+                return True
+                
+            # 默认英文 / Default to English
+            return False
+        except:
+            return False
+
     def blend(self, reference, target, mode, anchor_mode, luma_space, align_corners, interpolation, force_match_size,
               luma_strength, strength, protect_strength, feather_radius, auto_mask, mask_threshold, external_mask=None):
         # 参数有效性验证 / Parameter validation
@@ -126,15 +148,15 @@ class ColorConsistencyHSLAdvanced:
         feather_radius = max(0, int(feather_radius))
         mask_threshold = np.clip(mask_threshold, 0.0, 1.0)
 
-        # 将中文模式映射到通道索引列表 / Map Chinese mode to channel indices
+        # 将中英文模式映射到通道索引列表 / Map Chinese/English mode to channel indices
         mode_map = {
-            "亮度": [0],
-            "色相": [1],
-            "饱和度": [2],
-            "亮度+色相": [0, 1],
-            "亮度+饱和度": [0, 2],
-            "色相+饱和度": [1, 2],
-            "亮度+色相+饱和度": [0, 1, 2],
+            "亮度": [0], "luminance": [0],
+            "色相": [1], "hue": [1],
+            "饱和度": [2], "saturation": [2],
+            "亮度+色相": [0, 1], "luminance+hue": [0, 1],
+            "亮度+饱和度": [0, 2], "luminance+saturation": [0, 2],
+            "色相+饱和度": [1, 2], "hue+saturation": [1, 2],
+            "亮度+色相+饱和度": [0, 1, 2], "luminance+hue+saturation": [0, 1, 2],
         }
         channels_to_match = mode_map.get(mode, [0, 1, 2])  # 默认全通道 / default all channels
 
@@ -177,7 +199,7 @@ class ColorConsistencyHSLAdvanced:
 
         # 构建 HSL 堆叠：L, H, S（L 可能来自 LAB 或 线性亮度）
         # Build HSL stack: L, H, S (L may come from LAB or linear luminance)
-        if luma_space == "LAB L通道":
+        if luma_space in ["LAB L通道", "LAB L channel"]:
             ref_luma = ref_lab[..., 0]
             tgt_luma = tgt_lab[..., 0]
         else:  # 线性RGB亮度 / linear RGB luminance
@@ -192,12 +214,12 @@ class ColorConsistencyHSLAdvanced:
         # 根据锚定模式生成匹配结果 / Generate matching result based on anchor mode
         matched_hsl = tgt_hsl.copy()
 
-        if anchor_mode == "统计匹配":
+        if anchor_mode in ["统计匹配", "statistical match"]:
             matched_hsl = self._match_channels_hsl(ref_hsl, tgt_hsl, mask, channels_to_match, luma_strength)
-        elif anchor_mode == "像素级精确":
+        elif anchor_mode in ["像素级精确", "pixel-perfect"]:
             for ch in channels_to_match:
                 matched_hsl[..., ch] = ref_hsl[..., ch]
-        elif anchor_mode == "亮度统计+色彩精确":
+        elif anchor_mode in ["亮度统计+色彩精确", "luminance stat + color exact"]:
             # 亮度统计匹配，色相/饱和度精确 / luminance statistical match, hue/saturation exact
             for ch in channels_to_match:
                 if ch == 0:  # 亮度 / luminance
@@ -239,7 +261,7 @@ class ColorConsistencyHSLAdvanced:
         matched_a, matched_b = self._polar_to_cartesian(matched_H, matched_S)
 
         # 根据 luma_space 重建最终图像 / Reconstruct final image based on luma_space
-        if luma_space == "LAB L通道":
+        if luma_space in ["LAB L通道", "LAB L channel"]:
             matched_lab = np.stack([matched_luma, matched_a, matched_b], axis=-1)
             matched_rgb = self._lab_to_rgb(matched_lab)
         else:  # 线性RGB亮度 / linear RGB luminance
