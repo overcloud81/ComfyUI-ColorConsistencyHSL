@@ -1,5 +1,13 @@
 # __init__.py
-from .color_consistency_hsl_advanced import ColorConsistencyHSLAdvanced
+import importlib.util
+import os
+
+module_path = os.path.join(os.path.dirname(__file__), 'ComfyUI-ColorConsistencyHSL.py')
+spec = importlib.util.spec_from_file_location("ComfyUI_ColorConsistencyHSL", module_path)
+module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(module)
+
+ColorConsistencyHSLAdvanced = module.ColorConsistencyHSLAdvanced
 
 NODE_CLASS_MAPPINGS = {
     "Color Consistency HSL Advanced": ColorConsistencyHSLAdvanced,
