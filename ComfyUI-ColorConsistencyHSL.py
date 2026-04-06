@@ -1,4 +1,4 @@
-# Version: 5.2 (Final) - Bilingual UI & Comments
+# Version: 5.3 (Final) - Bilingual UI & Comments
 # Author: overcloud81(@github @modelscope) with deepseek
 # Copyright (c) 2025 overcloud81. All rights reserved.
 # 功能：支持亮度(L)、色相(H)、饱和度(S)独立匹配，新增“色彩精确”模式（色相/饱和度像素级精确，亮度不变）
