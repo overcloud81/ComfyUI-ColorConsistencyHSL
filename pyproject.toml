@@ -1,6 +1,6 @@
 [project]
 name = "color-consistency-hsl"
-version = "5.3.0"
+version = "5.5.0"
 description = "HSL-based color consistency node for ComfyUI. Supports independent matching of Luminance, Hue, and Saturation with mask protection and bilingual UI."
 readme = "README.md"
 requires-python = ">=3.8"
