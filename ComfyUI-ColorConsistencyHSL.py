@@ -1,4 +1,4 @@
-# Version: 5.3 (Final) - Bilingual UI & Comments
+# Version: 5.5 (Final) - Bilingual UI & Comments
 # Author: overcloud81(@github @modelscope) with deepseek
 # Copyright (c) 2025 overcloud81. All rights reserved.
 # 功能：支持亮度(L)、色相(H)、饱和度(S)独立匹配，新增“色彩精确”模式（色相/饱和度像素级精确，亮度不变）
@@ -113,25 +113,41 @@ class ColorConsistencyHSLAdvanced:
     def _is_chinese_locale():
         """检测是否为中文界面 / Detect if UI is in Chinese"""
         try:
-            # 方法1: 检查 ComfyUI 配置文件 / Check ComfyUI config file
-            config_path = os.path.join(folder_paths.base_path, "comfy.settings.json")
+            import json
+            
+            # 方法1: 检查用户目录下的配置文件 / Check user config file
+            user_dir = os.path.join(folder_paths.base_path, "user", "default")
+            config_path = os.path.join(user_dir, "comfy.settings.json")
+            
+            if not os.path.exists(config_path):
+                # 尝试其他可能的路径 / Try alternative paths
+                config_path = os.path.join(folder_paths.base_path, "comfy.settings.json")
+            
             if os.path.exists(config_path):
-                import json
                 with open(config_path, 'r', encoding='utf-8') as f:
                     config = json.load(f)
-                    lang = config.get("Comfy.Locale", {}).get("value", "en")
-                    if isinstance(lang, str):
-                        return lang.startswith('zh') or lang == 'zh-CN' or lang == 'zh-TW'
+                    # 尝试多种可能的键名 / Try multiple possible key names
+                    lang = None
+                    if "Comfy.Locale" in config:
+                        lang_value = config["Comfy.Locale"]
+                        if isinstance(lang_value, dict):
+                            lang = lang_value.get("value", lang_value.get("selected", "en"))
+                        elif isinstance(lang_value, str):
+                            lang = lang_value
+                    
+                    if lang and isinstance(lang, str):
+                        return lang.startswith('zh') or 'chinese' in lang.lower()
             
             # 方法2: 检查环境变量 / Check environment variable
-            lang_env = os.environ.get('COMFYUI_LANG', '')
-            if lang_env.startswith('zh'):
+            lang_env = os.environ.get('COMFYUI_LANG', os.environ.get('LANG', ''))
+            if lang_env and (lang_env.startswith('zh') or 'chinese' in lang_env.lower()):
                 return True
                 
-            # 默认英文 / Default to English
-            return False
-        except:
-            return False
+            # 默认中文（更符合国内用户使用习惯）/ Default to Chinese (more suitable for Chinese users)
+            return True
+        except Exception as e:
+            print(f"[ColorConsistencyHSL] Language detection error: {e}")
+            return True  # 出错时默认中文 / Default to Chinese on error
 
     def blend(self, reference, target, mode, anchor_mode, luma_space, align_corners, interpolation, force_match_size,
               luma_strength, strength, protect_strength, feather_radius, auto_mask, mask_threshold, external_mask=None):
